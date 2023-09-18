@@ -29,7 +29,7 @@ def com_client(q_stm, q_img):  # will be used for two-way communication with cli
 
             else:
                 state = False
-            time.sleep(0.06)
+            time.sleep(0.03)
 
 
 def capturing(q):  # just for separate video capture
@@ -39,11 +39,12 @@ def capturing(q):  # just for separate video capture
         if not state:
             print('somthing went wrong')
             sys.exit(0)
-        state, raw_frame = cv2.imencode('.png', raw_frame)
+        state, raw_frame = cv2.imencode('.jpg', raw_frame)
         if not state:
             print('somthing went wrong')
             sys.exit(0)
         encoded_image = raw_frame.tobytes()
+        q.empty()
         q.put(encoded_image)  # transfer image to queue, so other tasks can access it
         time.sleep(0.06)
 
