@@ -28,16 +28,16 @@ def com_client(stop, int_stm, float_stm, q_img):  # will be used for two-way com
         ret, frame = cv2.imencode('.jpg', frame)
 
         client_socket, adr = server_socket.accept()
-        print(f'connected: {adr}')
+        #print(f'connected: {adr}')
         data_got = client_socket.recv(10)
         if data_got:
             client_socket.send(len(frame).to_bytes(3, 'big'))
             client_socket.send(bytes(frame))
-            print(len(frame))
+            #print(len(frame))
 
         else:
             state = False
-        time.sleep(0.03)
+        #time.sleep(0.03)
     print('Server stopped')
     sys.exit(0)
 

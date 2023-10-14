@@ -6,7 +6,7 @@ class STM_comm(serial.Serial):
         super().__init__(**kwargs)
         for i in range(3):
             try:
-                self.Serial(f'/dev/ttyACM{i}', speed)
+                self.Serial(f'/dev/ttyACM{0}', 12000000)
                 self.opened = True
                 return
             except:
