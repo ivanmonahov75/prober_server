@@ -16,17 +16,24 @@ def com_stm(stop, int_data, float_data):  # will be used for sending and receivi
 
 
 def com_client(stop, int_stm, float_stm, q_img):  # will be used for two-way communication with client (desktop)
+    # socket init
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind(('127.0.0.1', 8080))
+    server_socket.bind(('192.168.1.146', 8080))
     server_socket.listen(1)
+
+    # camera init
+    cap = cv2.VideoCapture('/dev/video0')
     while stop.value == 1:
         client_socket, adr = server_socket.accept()
         print(f'connected: {adr}')
-        data_got = client_socket.recv(60)
+        data_got = client_socket.recv(10)
         if data_got:
-            new_data = data_got.split()
-            if new_data[0] == b'image':
-                client_socket.send(q_img.get())
+            if data_got == b'image':
+                ret, frame = cap.read()
+                ret, frame = cv2.imencode('.jpg', frame)
+                client_socket.send(len(frame).to_bytes(3, 'big'))
+                client_socket.send(bytes(frame))
+                print(len(frame))
             else:
                 client_socket.send(b'error')
         else:
@@ -68,7 +75,7 @@ if __name__ == '__main__':
     p_cap = mp.Process(target=capturing, args=(_stop, queue_img,))
     p_stm = mp.Process(target=com_stm, args=(_stop, int_stm_data, float_stm_data))
 
-    p_cap.start()
+    # p_cap.start()
     p_com.start()
     p_stm.start()
 
