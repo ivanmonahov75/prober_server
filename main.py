@@ -17,25 +17,24 @@ def com_stm(stop, int_data, float_data):  # will be used for sending and receivi
 
 def com_client(stop, int_stm, float_stm, q_img):  # will be used for two-way communication with client (desktop)
     # socket init
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket = socket.socket()
     server_socket.bind(('192.168.1.146', 8080))
     server_socket.listen(1)
 
     # camera init
     cap = cv2.VideoCapture('/dev/video0')
     while stop.value == 1:
+        ret, frame = cap.read()
+        ret, frame = cv2.imencode('.jpg', frame)
+
         client_socket, adr = server_socket.accept()
         print(f'connected: {adr}')
         data_got = client_socket.recv(10)
         if data_got:
-            if data_got == b'image':
-                ret, frame = cap.read()
-                ret, frame = cv2.imencode('.jpg', frame)
-                client_socket.send(len(frame).to_bytes(3, 'big'))
-                client_socket.send(bytes(frame))
-                print(len(frame))
-            else:
-                client_socket.send(b'error')
+            client_socket.send(len(frame).to_bytes(3, 'big'))
+            client_socket.send(bytes(frame))
+            print(len(frame))
+
         else:
             state = False
         time.sleep(0.03)
@@ -82,4 +81,3 @@ if __name__ == '__main__':
     while _stop.value == 1:
         _stop.value = int(input())
         exit(0)
-
