@@ -5,12 +5,16 @@ import multiprocessing as mp
 import cv2
 import serial
 import stm_class
+import struct
 
 
 def com_stm(stop, int_data, float_data):  # will be used for sending and receiving data from stm
     test = stm_class.STM_comm(12000000)
     while stop.value == 1:
-        pass
+        print('start')
+        print(test.get_data())
+        print('finish')
+        time.sleep(5)
     print('STM stopped')
     sys.exit(0)
 
@@ -30,11 +34,14 @@ def com_client(stop, int_stm, float_stm, q_img):  # will be used for two-way com
         client_socket, adr = server_socket.accept()
         #print(f'connected: {adr}')
         data_got = client_socket.recv(10)
-        if data_got:
+        if data_got == b'image':
             client_socket.send(len(frame).to_bytes(3, 'big'))
             client_socket.send(bytes(frame))
             #print(len(frame))
 
+        elif data_got == b'low':
+            print('low lvl')
+            pass
         else:
             state = False
         #time.sleep(0.03)
@@ -75,7 +82,7 @@ if __name__ == '__main__':
     p_stm = mp.Process(target=com_stm, args=(_stop, int_stm_data, float_stm_data))
 
     # p_cap.start()
-    p_com.start()
+    # p_com.start()
     p_stm.start()
 
     while _stop.value == 1:
