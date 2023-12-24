@@ -17,14 +17,14 @@ class STM_comm():
             except:
                 print(f'No /dev/ttyACM{i}')
 
-    def get_data(self):
-        data = {'press' : 0, 'temp': 0}
+    def comm(self, data=b'\xdc\x05\xdc\x05\xdc\x05\xdc\x05\xdc\x05\xdc\x05'):
+        if len(data) < 12:
+            data = b'\xdc\x05\xdc\x05\xdc\x05\xdc\x05\xdc\x05\xdc\x05'
         if self.opened:
-            self.ser.write(self.adr_press)
-            data['press'] = int.from_bytes(self.ser.read(4), 'little')/1000
-            self.ser.write(self.adr_temp)
-            data['temp'] = struct.unpack('f', self.ser.read(4))
-            return data
+            self.ser.write(data)
+            temperature = round(struct.unpack('f', self.ser.read(4))[0], 4)
+            pressure = struct.unpack('i', self.ser.read(4))[0]
+            return temperature, pressure
         return self.opened
 
 

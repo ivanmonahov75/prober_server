@@ -6,47 +6,47 @@ import cv2
 import serial
 import stm_class
 import struct
+import ctypes
 
 
-def com_stm(stop, int_data, float_data):  # will be used for sending and receiving data from stm
-    test = stm_class.STM_comm(12000000)
+def com_stm(stop, int_data, float_data, to_stm):  # will be used for sending and receiving data from stm
+    stm = stm_class.STM_comm(12000000)
     while stop.value == 1:
-        print('start')
-        print(test.get_data())
-        print('finish')
-        time.sleep(5)
+        float_data[0], int_data[0] = stm.comm(to_stm.value[0:2] + to_stm[2:4]*5)
     print('STM stopped')
     sys.exit(0)
 
 
-def com_client(stop, int_stm, float_stm, q_img):  # will be used for two-way communication with client (desktop)
+def com_client(stop, int_stm, float_stm, q_img, to_stm):  # will be used for two-way communication with client (desktop)
     # socket init
     server_socket = socket.socket()
-    server_socket.bind(('192.168.1.146', 8080))
+    server_socket.bind(('127.0.0.1', 8080))
     server_socket.listen(1)
 
     # camera init
-    cap = cv2.VideoCapture('/dev/video0')
+    # cap = cv2.VideoCapture('/dev/video0')
     while stop.value == 1:
-        ret, frame = cap.read()
-        ret, frame = cv2.imencode('.jpg', frame)
+        # ret, frame = cap.read()
+        # ret, frame = cv2.imencode('.jpg', frame)
 
         client_socket, adr = server_socket.accept()
-        #print(f'connected: {adr}')
-        data_got = client_socket.recv(10)
-        if data_got == b'image':
-            client_socket.send(len(frame).to_bytes(3, 'big'))
-            client_socket.send(bytes(frame))
-            #print(len(frame))
+        # print(f'Connected: {adr}')
+        data_got = client_socket.recv(3)
+        if data_got == b'img':
+            pass
+            # client_socket.send(len(frame).to_bytes(3, 'big'))
+            # client_socket.send(bytes(frame))
+            # print(len(frame))
 
         elif data_got == b'low':
-            print('low lvl')
-            pass
-        else:
-            state = False
-        #time.sleep(0.03)
+            to_stm.value = b''
+            for i in range(6):
+                to_stm[i*2:i*2 + 2] = client_socket.recv(2)
+
+            client_socket.send(struct.pack('f', float_stm[0]) + struct.pack('i', int_stm[0]))
+            # print((float_stm[0], int_stm[0]))
+        # time.sleep(0.03)
     print('Server stopped')
-    sys.exit(0)
 
 
 def capturing(stop, q):  # just for separate video capture
@@ -72,19 +72,19 @@ def capturing(stop, q):  # just for separate video capture
 
 if __name__ == '__main__':
     _stop = mp.Value('i', 1)
-    int_stm_data = mp.Array('i', 10)
-    float_stm_data = mp.Array('d', 10)
+    int_stm_data = mp.Array('i', 8)
+    float_stm_data = mp.Array('d', 2)
+    data_to_stm = array = mp.Array(ctypes.c_char, b'\xdc\x05\xdc\x05\xdc\x05\xdc\x05\xdc\x05\xdc\x05')
 
     queue_img = mp.Queue()
 
-    p_com = mp.Process(target=com_client, args=(_stop, int_stm_data, float_stm_data, queue_img))
-    p_cap = mp.Process(target=capturing, args=(_stop, queue_img,))
-    p_stm = mp.Process(target=com_stm, args=(_stop, int_stm_data, float_stm_data))
+    p_com = mp.Process(target=com_client, args=(_stop, int_stm_data, float_stm_data, queue_img, data_to_stm))
+    p_cap = mp.Process(target=capturing, args=(_stop, queue_img,))  # currently not in use
+    p_stm = mp.Process(target=com_stm, args=(_stop, int_stm_data, float_stm_data, data_to_stm))
 
     # p_cap.start()
-    # p_com.start()
+    p_com.start()
     p_stm.start()
-
     while _stop.value == 1:
         _stop.value = int(input())
         exit(0)
