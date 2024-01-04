@@ -12,7 +12,7 @@ import ctypes
 def com_stm(stop, int_data, float_data, to_stm):  # will be used for sending and receiving data from stm
     stm = stm_class.STM_comm(12000000)
     while stop.value == 1:
-        float_data[0], int_data[0] = stm.comm(to_stm.value[0:2] + to_stm[2:4]*5)
+        float_data[0], int_data[0] = stm.comm(to_stm.value[0:2] + to_stm[2:4] + to_stm[4:6] + to_stm[6:8] + to_stm[8:10] + to_stm[10:12])
     print('STM stopped')
     sys.exit(0)
 

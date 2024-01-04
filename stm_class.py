@@ -6,6 +6,7 @@ import serial
 
 class STM_comm():
     def __init__(self, speed):
+        self.opened = None
         self.adr_press = (1).to_bytes(1, 'big')
         self.adr_temp = (2).to_bytes(1, 'big')
         for i in range(3):
