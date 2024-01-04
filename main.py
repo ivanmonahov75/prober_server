@@ -20,32 +20,32 @@ def com_stm(stop, int_data, float_data, to_stm):  # will be used for sending and
 def com_client(stop, int_stm, float_stm, q_img, to_stm):  # will be used for two-way communication with client (desktop)
     # socket init
     server_socket = socket.socket()
-    server_socket.bind(('127.0.0.1', 8080))
+    server_socket.bind(('192.168.1.146', 8080))
     server_socket.listen(1)
 
     # camera init
-    # cap = cv2.VideoCapture('/dev/video0')
+    cap = cv2.VideoCapture('/dev/video0')
     while stop.value == 1:
-        # ret, frame = cap.read()
-        # ret, frame = cv2.imencode('.jpg', frame)
+        #ret, frame = cap.read()
+        #ret, frame = cv2.imencode('.jpg', frame)
 
         client_socket, adr = server_socket.accept()
         # print(f'Connected: {adr}')
         data_got = client_socket.recv(3)
-        if data_got == b'img':
-            pass
-            # client_socket.send(len(frame).to_bytes(3, 'big'))
-            # client_socket.send(bytes(frame))
+        if data_got:
+            ret, frame = cap.read()
+            ret, frame = cv2.imencode('.jpg', frame)
+            client_socket.send(len(frame).to_bytes(3, 'big'))
+            client_socket.send(bytes(frame))
             # print(len(frame))
 
-        elif data_got == b'low':
             to_stm.value = b''
             for i in range(6):
                 to_stm[i*2:i*2 + 2] = client_socket.recv(2)
 
             client_socket.send(struct.pack('f', float_stm[0]) + struct.pack('i', int_stm[0]))
             # print((float_stm[0], int_stm[0]))
-        # time.sleep(0.03)
+        time.sleep(0.01)
     print('Server stopped')
 
 
