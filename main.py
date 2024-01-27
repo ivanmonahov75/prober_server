@@ -12,7 +12,8 @@ import ctypes
 def com_stm(stop, int_data, float_data, to_stm):  # will be used for sending and receiving data from stm
     stm = stm_class.STM_comm(12000000)
     while stop.value == 1:
-        float_data[0], int_data[0] = stm.comm(to_stm.value[0:2] + to_stm[2:4] + to_stm[4:6] + to_stm[6:8] + to_stm[8:10] + to_stm[10:12])
+       # float_data[0], int_data[0] = stm.comm(to_stm.value[0:2] + to_stm[2:4] + to_stm[4:6] + to_stm[6:8] + to_stm[8:10] + to_stm[10:12])
+        pass
     print('STM stopped')
     sys.exit(0)
 
@@ -22,31 +23,36 @@ def com_client(stop, int_stm, float_stm, q_img, to_stm):  # will be used for two
     server_socket = socket.socket()
     server_socket.bind(('192.168.1.146', 8080))
     server_socket.listen(1)
-
     # camera init
     cap = cv2.VideoCapture('/dev/video0')
     while stop.value == 1:
-        #ret, frame = cap.read()
-        #ret, frame = cv2.imencode('.jpg', frame)
+        ret, frame = cap.read()
+        ret, frame = cv2.imencode('.jpg', frame)
 
         client_socket, adr = server_socket.accept()
-        # print(f'Connected: {adr}')
-        data_got = client_socket.recv(3)
-        if data_got:
-            ret, frame = cap.read()
-            ret, frame = cv2.imencode('.jpg', frame)
-            client_socket.send(len(frame).to_bytes(3, 'big'))
-            client_socket.send(bytes(frame))
+       # print(f'Connected: {adr}')
+        data_tostm = client_socket.recv(12)
+        # sned data to stm
+
+        client_socket.send(len(frame).to_bytes(3, 'big'))
+        #client_socket.send(bytes(frame))
+        #if data_got:
+           # ret, frame = cap.read()
+           # ret, frame = cv2.imencode('.jpg', frame)
+           # client_socket.send(len(frame).to_bytes(3, 'big'))
+           # client_socket.send(bytes(frame))
             # print(len(frame))
 
-            to_stm.value = b''
-            for i in range(6):
-                to_stm[i*2:i*2 + 2] = client_socket.recv(2)
+            #to_stm.value = b''
+            #for i in range(6):
+                #to_stm[i*2:i*2 + 2] = client_socket.recv(2)
 
-            client_socket.send(struct.pack('f', float_stm[0]) + struct.pack('i', int_stm[0]))
+            #client_socket.send(struct.pack('f', float_stm[0]) + struct.pack('i', int_stm[0]))
             # print((float_stm[0], int_stm[0]))
-        time.sleep(0.01)
-    print('Server stopped')
+        #else:
+            #print('data error')
+#        time.sleep(0.01)
+#    print('Server stopped')
 
 
 def capturing(stop, q):  # just for separate video capture

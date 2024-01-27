@@ -21,6 +21,7 @@ class STM_comm():
     def comm(self, data=b'\xdc\x05\xdc\x05\xdc\x05\xdc\x05\xdc\x05\xdc\x05'):
         if len(data) < 12:
             data = b'\xdc\x05\xdc\x05\xdc\x05\xdc\x05\xdc\x05\xdc\x05'
+            return 0.0, 0
         if self.opened:
             self.ser.write(data)
             temperature = round(struct.unpack('f', self.ser.read(4))[0], 4)
