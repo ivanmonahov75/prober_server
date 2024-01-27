@@ -19,61 +19,31 @@ def com_stm(stop, int_data, float_data, to_stm):  # will be used for sending and
 
 
 def com_client(stop, int_stm, float_stm, q_img, to_stm):  # will be used for two-way communication with client (desktop)
-    # socket init
-    server_socket = socket.socket()
-    server_socket.bind(('192.168.1.146', 8080))
-    server_socket.listen(1)
     # camera init
     cap = cv2.VideoCapture('/dev/video0')
     while stop.value == 1:
+        # socket reg init
+        socket_server = socket.socket()
+        socket_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        socket_server.bind(('192.168.1.146', 8080))
+        socket_server.listen(1)
+
+        socket_client, adr = socket_server.accept()
+
+        # add getting data for stm
+        for i in range(6):
+            data_to_stm[i*2:i*2 + 2] = socket_client.recv(2)
+
+        # camera usage
         ret, frame = cap.read()
         ret, frame = cv2.imencode('.jpg', frame)
+        socket_client.send(len(frame).to_bytes(3, 'big'))
+        socket_client.send(frame)
 
-        client_socket, adr = server_socket.accept()
-       # print(f'Connected: {adr}')
-        data_tostm = client_socket.recv(12)
-        # sned data to stm
+        socket_server.shutdown(1)
+        socket_server.close()
+    print('Server stopped')
 
-        client_socket.send(len(frame).to_bytes(3, 'big'))
-        #client_socket.send(bytes(frame))
-        #if data_got:
-           # ret, frame = cap.read()
-           # ret, frame = cv2.imencode('.jpg', frame)
-           # client_socket.send(len(frame).to_bytes(3, 'big'))
-           # client_socket.send(bytes(frame))
-            # print(len(frame))
-
-            #to_stm.value = b''
-            #for i in range(6):
-                #to_stm[i*2:i*2 + 2] = client_socket.recv(2)
-
-            #client_socket.send(struct.pack('f', float_stm[0]) + struct.pack('i', int_stm[0]))
-            # print((float_stm[0], int_stm[0]))
-        #else:
-            #print('data error')
-#        time.sleep(0.01)
-#    print('Server stopped')
-
-
-def capturing(stop, q):  # just for separate video capture
-    cam = cv2.VideoCapture(0)
-    while stop.value == 1:
-        state, raw_frame = cam.read()
-        if not state:
-            print('no camera')
-            sys.exit(0)
-        state, raw_frame = cv2.imencode('.jpg', raw_frame)
-        if not state:
-            print('camera doesnt work')
-            sys.exit(0)
-        encoded_image = raw_frame.tobytes()
-        while not q.empty():
-            test = q.get()
-        q.put(encoded_image)  # transfer image to queue, so other tasks can access it
-        time.sleep(0.03)
-    cam.release()
-    print("Capturing stopped")
-    sys.exit(0)
 
 
 if __name__ == '__main__':
@@ -85,10 +55,8 @@ if __name__ == '__main__':
     queue_img = mp.Queue()
 
     p_com = mp.Process(target=com_client, args=(_stop, int_stm_data, float_stm_data, queue_img, data_to_stm))
-    p_cap = mp.Process(target=capturing, args=(_stop, queue_img,))  # currently not in use
     p_stm = mp.Process(target=com_stm, args=(_stop, int_stm_data, float_stm_data, data_to_stm))
 
-    # p_cap.start()
     p_com.start()
     p_stm.start()
     while _stop.value == 1:
