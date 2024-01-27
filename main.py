@@ -30,9 +30,8 @@ def com_client(stop, int_stm, float_stm, q_img, to_stm):  # will be used for two
 
         socket_client, adr = socket_server.accept()
 
-        # add getting data for stm
-        for i in range(6):
-            data_to_stm[i*2:i*2 + 2] = socket_client.recv(2)
+        # add getting data for st
+        data_to_stm = socket_client.recv(12)
 
         # camera usage
         ret, frame = cap.read()
@@ -40,6 +39,11 @@ def com_client(stop, int_stm, float_stm, q_img, to_stm):  # will be used for two
         socket_client.send(len(frame).to_bytes(3, 'big'))
         socket_client.send(frame)
 
+        # send data from stm
+        socket_client.send(b'\x00\x00\xbcA')
+        socket_client.send(b'\x90_\x01\x00')
+
+        # shutdown socket
         socket_server.shutdown(1)
         socket_server.close()
     print('Server stopped')
