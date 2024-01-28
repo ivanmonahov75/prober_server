@@ -19,10 +19,7 @@ class STM_comm():
                 print(f'No /dev/ttyACM{i}')
 
     def comm(self, data=b'\xdc\x05\xdc\x05\xdc\x05\xdc\x05\xdc\x05\xdc\x05'):
-        if len(data) < 12:
-            data = b'\xdc\x05\xdc\x05\xdc\x05\xdc\x05\xdc\x05\xdc\x05'
-            return 0.0, 0
-        if self.opened:
+        if True:
             self.ser.write(data)
             temperature = round(struct.unpack('f', self.ser.read(4))[0], 4)
             pressure = struct.unpack('i', self.ser.read(4))[0]
