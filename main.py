@@ -13,8 +13,7 @@ def com_stm(stop, flag, float_data, to_stm):  # will be used for sending and rec
     stm = stm_class.STM_comm(12000000)
     while stop.value == 1:
         if flag.value == 1:
-            float_data = stm.comm(to_stm.value[0:2] + to_stm[2:4] + to_stm[4:6] + to_stm[6:8] + to_stm[8:10] + to_stm[10:12])
-            print(float_data[0])
+            float_data[0:2] = stm.comm(to_stm.value[0:2] + to_stm[2:4] + to_stm[4:6] + to_stm[6:8] + to_stm[8:10] + to_stm[10:12])
             flag.value = 0
     print('STM stopped')
     sys.exit(0)
@@ -43,9 +42,7 @@ def com_client(stop, flag, float_stm, q_img, to_stm):  # will be used for two-wa
 
         # send data from stm
         socket_client.send(struct.pack('f', float_stm[0]))
-        print(float_stm[0])
-        print(struct.pack('f', float_stm[0]))
-        socket_client.send(b'\x90_\x01\x00')
+        socket_client.send(round(float_stm[1]).to_bytes(4, 'little'))
 
         # shutdown socket
         socket_server.shutdown(1)
